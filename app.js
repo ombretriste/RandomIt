@@ -1,8 +1,9 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 const DISPLAY_KEY = 'randomit:display';
+const BOTES_KEY = 'randomit:botes';
 
 // Sorteos: grupos de bolas (cantidad, mínimo —1 si no se indica— y máximo) o, en La Quiniela, 14 partidos 1 X 2 y el Pleno al 15
 const GAMES = {
@@ -125,7 +126,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 $('games').innerHTML = Object.entries(GAMES).map(([key, g]) => `
   <button class="game ${key}" type="button" data-game="${key}">
     <span class="game-icon">${icon(key, 28)}</span>
-    <span class="game-text"><span class="game-name">${g.name}</span><span class="game-desc">${g.desc}</span></span>
+    <span class="game-text"><span class="game-name">${g.name}</span><span class="game-desc">${g.desc}</span><span class="game-bote" data-bote="${key}" hidden></span></span>
     <span class="game-go">${icon('go', 18)}</span>
   </button>`).join('');
 
@@ -133,6 +134,74 @@ $('games').addEventListener('click', (e) => {
   const btn = e.target.closest('button.game');
   if (btn) openDraw(btn.dataset.game);
 });
+
+// ---------- Botes del próximo sorteo (vía /api/botes) ----------
+
+const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+let botes = {};
+
+// 17 millones €, 31,5 millones €, 500.000 €
+function fmtBote(n) {
+  if (n >= 1e6) return `${(n / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 2 })} millones €`;
+  return `${n.toLocaleString('es-ES')} €`;
+}
+
+function drawDate(fecha) {
+  const [y, m, d] = fecha.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function todayStart() {
+  const t = new Date();
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+}
+
+// Solo botes de sorteos que aún no han pasado
+function currentBote(key) {
+  const b = botes[key];
+  return b && drawDate(b.fecha) >= todayStart() ? b : null;
+}
+
+function boteCardText(key) {
+  const b = currentBote(key);
+  if (!b) return '';
+  const date = drawDate(b.fecha);
+  return `Bote ${fmtBote(b.bote)} · ${DAYS[date.getDay()].slice(0, 3)} ${date.getDate()} ${MONTHS[date.getMonth()].slice(0, 3)}`;
+}
+
+function boteDrawText(key) {
+  const b = currentBote(key);
+  if (!b) return '';
+  const date = drawDate(b.fecha);
+  return `Bote de ${fmtBote(b.bote)} · ${DAYS[date.getDay()]} ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
+}
+
+function renderBotes() {
+  document.querySelectorAll('[data-bote]').forEach((el) => {
+    el.textContent = boteCardText(el.dataset.bote);
+    el.hidden = !el.textContent;
+  });
+  document.querySelectorAll('[data-bote-draw]').forEach((el) => {
+    el.textContent = boteDrawText(el.dataset.boteDraw);
+    el.hidden = !el.textContent;
+  });
+}
+
+async function loadBotes() {
+  // Primero los últimos guardados (sirven sin conexión), luego los de ahora
+  botes = load(BOTES_KEY, {}).botes || {};
+  renderBotes();
+  try {
+    const res = await fetch('api/botes', { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) throw new Error(res.status);
+    const json = await res.json();
+    if (!json.botes) throw new Error('formato');
+    botes = json.botes;
+    save(BOTES_KEY, json);
+    renderBotes();
+  } catch (_) { /* sin conexión o sin datos: se quedan los guardados */ }
+}
 
 // ---------- Sorteo (hoja emergente con animación) ----------
 
@@ -169,6 +238,7 @@ function openDraw(key) {
     <div class="sheet draw-sheet ${key}" role="dialog" aria-modal="true" aria-labelledby="draw-title">
       <div class="drum">${DRUM}</div>
       <h2 class="sheet-title" id="draw-title">${game.name}</h2>
+      <p class="draw-bote" data-bote-draw="${key}"${boteDrawText(key) ? '' : ' hidden'}>${boteDrawText(key)}</p>
       <p class="muted small draw-status" aria-live="polite"></p>
       <div class="draw-body"></div>
       <div class="draw-actions">
@@ -481,6 +551,7 @@ document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 
 applyDisplay();
+loadBotes();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
