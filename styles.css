@@ -19,6 +19,7 @@
   /* Color de cada juego */
   --euro: #8fb4ff;
   --primi: #5ee0a0;
+  --gordo: #ff9a7a;
   --bono: #f7a6cf;
   --quini: #ffbf6a;
   /* Fondo: intensidad de las manchas y de las ondas */
@@ -44,6 +45,7 @@
   --bar-bg: rgba(250, 246, 255, 0.6);
   --euro: #2f5fd0;
   --primi: #0f8a5c;
+  --gordo: #c2410c;
   --bono: #c0267a;
   --quini: #b76e00;
   --wall-a: 0.34;
@@ -268,6 +270,7 @@ main {
 .game:active { transform: scale(.98); border-color: color-mix(in srgb, var(--c) 55%, transparent); }
 .game.euromillones { --c: var(--euro); }
 .game.primitiva { --c: var(--primi); }
+.game.gordo { --c: var(--gordo); }
 .game.bonoloto { --c: var(--bono); }
 .game.quiniela { --c: var(--quini); }
 .game-icon {
@@ -423,6 +426,7 @@ main {
 .draw-sheet { --c: var(--accent); }
 .draw-sheet.euromillones { --c: var(--euro); }
 .draw-sheet.primitiva { --c: var(--primi); }
+.draw-sheet.gordo { --c: var(--gordo); }
 .draw-sheet.bonoloto { --c: var(--bono); }
 .draw-sheet.quiniela { --c: var(--quini); }
 .draw-sheet .sheet-title { margin: 0; }
@@ -465,6 +469,8 @@ main {
   box-shadow: 0 0 18px color-mix(in srgb, var(--c) 35%, transparent);
   animation: lock-in .45s cubic-bezier(.2, 1.6, .4, 1);
 }
+/* Número clave de El Gordo, en oro */
+.ball.key { --c: var(--gold); }
 /* Estrellas de Euromillones */
 .ball.star { --c: var(--gold); border: 0; border-radius: 0; background: none; box-shadow: none; }
 .ball.star::before {

@@ -1,10 +1,10 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 const DISPLAY_KEY = 'randomit:display';
 
-// Sorteos: grupos de bolas (cantidad y máximo) o, en La Quiniela, 14 partidos 1 X 2 y el Pleno al 15
+// Sorteos: grupos de bolas (cantidad, mínimo —1 si no se indica— y máximo) o, en La Quiniela, 14 partidos 1 X 2 y el Pleno al 15
 const GAMES = {
   euromillones: {
     name: 'Euromillones',
@@ -15,6 +15,11 @@ const GAMES = {
     name: 'La Primitiva',
     desc: '6 números del 1 al 49',
     groups: [{ label: 'Números', count: 6, max: 49 }],
+  },
+  gordo: {
+    name: 'El Gordo de la Primitiva',
+    desc: '5 números del 1 al 54 y el número clave del 0 al 9',
+    groups: [{ label: 'Números', count: 5, max: 54 }, { label: 'Número clave', count: 1, min: 0, max: 9, key: true }],
   },
   bonoloto: {
     name: 'Bonoloto',
@@ -34,6 +39,7 @@ const ICONS = {
   // Juegos
   euromillones: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
   primitiva: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><g fill="currentColor" stroke="none"><circle cx="9.5" cy="8" r="1.2"/><circle cx="14.5" cy="8" r="1.2"/><circle cx="9.5" cy="12" r="1.2"/><circle cx="14.5" cy="12" r="1.2"/><circle cx="9.5" cy="16" r="1.2"/></g><circle cx="14.5" cy="16" r="1.6"/>',
+  gordo: '<path d="M4.5 17l-1.5-9 5 3.8L12 5l4 6.8L21 8l-1.5 9z"/><path d="M5 20.5h14"/>',
   bonoloto: '<circle cx="12" cy="7.5" r="4"/><circle cx="7.5" cy="15.5" r="4"/><circle cx="16.5" cy="15.5" r="4"/>',
   quiniela: '<circle cx="12" cy="12" r="8.5"/><path d="M12 8.5l3.3 2.4-1.3 3.9h-4l-1.3-3.9z"/><path d="M12 8.5V3.5M15.3 10.9l4.6-1.6M14 14.8l2.8 4M10 14.8l-2.8 4M8.7 10.9L4.1 9.3"/>',
   // Interfaz
@@ -80,11 +86,12 @@ function randInt(n) {
   return buf[0] % n;
 }
 
-// k números distintos del 1 al max, ordenados de menor a mayor
-function pick(k, max) {
-  const pool = Array.from({ length: max }, (_, i) => i + 1);
+// k números distintos del min al max, ordenados de menor a mayor
+function pick(k, max, min = 1) {
+  const n = max - min + 1;
+  const pool = Array.from({ length: n }, (_, i) => i + min);
   for (let i = 0; i < k; i++) {
-    const j = i + randInt(max - i);
+    const j = i + randInt(n - i);
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   return pool.slice(0, k).sort((a, b) => a - b);
@@ -177,10 +184,10 @@ function openDraw(key) {
 }
 
 // Cada «unidad» (una bola o un partido) va cambiando al azar hasta que se fija en su valor final
-function ballUnit(el, final, max) {
+function ballUnit(el, final, max, min = 1) {
   const span = el.querySelector('span') || el;
   return {
-    tick: () => { span.textContent = randInt(max) + 1; },
+    tick: () => { span.textContent = min + randInt(max - min + 1); },
     lock: () => { span.textContent = final; el.classList.add('locked'); },
   };
 }
@@ -198,8 +205,8 @@ function choiceUnit(row, cells, final) {
   };
 }
 
-function ballSpanHTML(star) {
-  return `<span class="ball${star ? ' star' : ''}"><span>–</span></span>`;
+function ballSpanHTML(g = {}) {
+  return `<span class="ball${g.star ? ' star' : ''}${g.key ? ' key' : ''}"><span>–</span></span>`;
 }
 
 function runDraw(key, back) {
@@ -238,12 +245,12 @@ function runDraw(key, back) {
     body.innerHTML = game.groups.map((g) => `
       <div class="draw-group">
         ${game.groups.length > 1 ? `<p class="label">${g.label}</p>` : ''}
-        <div class="balls">${Array.from({ length: g.count }, () => ballSpanHTML(g.star)).join('')}</div>
+        <div class="balls">${Array.from({ length: g.count }, () => ballSpanHTML(g)).join('')}</div>
       </div>`).join('');
     body.querySelectorAll('.draw-group').forEach((groupEl, gi) => {
       const g = game.groups[gi];
-      const nums = pick(g.count, g.max);
-      groupEl.querySelectorAll('.ball').forEach((el, i) => units.push(ballUnit(el, nums[i], g.max)));
+      const nums = pick(g.count, g.max, g.min);
+      groupEl.querySelectorAll('.ball').forEach((el, i) => units.push(ballUnit(el, nums[i], g.max, g.min)));
     });
     step = 420;
   }

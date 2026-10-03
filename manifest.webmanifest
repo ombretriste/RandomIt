@@ -1,7 +1,7 @@
 {
   "name": "RandomIt",
   "short_name": "RandomIt",
-  "description": "Combinaciones aleatorias para Euromillones, La Primitiva, Bonoloto y La Quiniela.",
+  "description": "Combinaciones aleatorias para Euromillones, La Primitiva, El Gordo, Bonoloto y La Quiniela.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
