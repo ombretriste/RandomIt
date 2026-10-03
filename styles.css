@@ -631,3 +631,16 @@ main {
   user-select: none;
 }
 .no-more input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+
+/* Versión de la app, discreta, en la parte de abajo de la pantalla de inicio */
+.sp-version {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: var(--muted);
+  opacity: .7;
+}
