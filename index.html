@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>RandomIt</title>
+  <meta name="description" content="Combinaciones aleatorias para Euromillones, La Primitiva, Bonoloto y La Quiniela." />
+  <meta name="theme-color" content="#100a1f" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RandomIt" />
+  <meta name="color-scheme" content="dark light" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Aplica tema y fondo antes de pintar (evita un destello del tema equivocado)
+    try {
+      var d = JSON.parse(localStorage.getItem('randomit:display') || '{}');
+      var light = d.theme === 'light' || (d.theme !== 'dark' && matchMedia('(prefers-color-scheme: light)').matches);
+      document.documentElement.dataset.theme = light ? 'light' : 'dark';
+      document.documentElement.dataset.wall = d.wall || 'amatista';
+    } catch (e) {}
+  </script>
+</head>
+<body class="booting">
+  <!-- Pantalla de inicio -->
+  <div id="splash" class="splash">
+    <div class="sp-top">
+      <span class="logo-slot" data-logo="132"></span>
+      <div class="wordmark">
+        <span class="wm-name">Random<b>It</b></span>
+        <span class="wm-by">by OmT Finance</span>
+      </div>
+    </div>
+    <div class="sp-bottom">
+      <button id="enter-btn" class="sp-enter" type="button" aria-label="Entrar">
+        <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg>
+      </button>
+      <p class="sp-label">Entrar</p>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <span class="logo-slot" data-logo="30"></span>
+        <span class="brand">Random<b>It</b></span>
+      </div>
+      <button id="menu-btn" class="icon-btn" aria-label="Más opciones" title="Más opciones" aria-haspopup="menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></g></svg>
+      </button>
+    </header>
+
+    <main>
+      <section class="intro">
+        <p class="label">Elige un sorteo</p>
+        <p class="intro-text">Pulsa un juego y RandomIt mezclará el bombo para darte una combinación al azar.</p>
+      </section>
+
+      <section class="games" id="games" aria-label="Sorteos"></section>
+
+      <p class="note">Combinaciones generadas al azar en tu dispositivo. Ninguna combinación tiene más probabilidades que otra. Juega con responsabilidad.</p>
+    </main>
+  </div>
+
+  <div class="rotate-hint" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg>
+    <p>Gira el móvil a vertical</p>
+  </div>
+
+  <div id="menu" class="menu" role="menu" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
