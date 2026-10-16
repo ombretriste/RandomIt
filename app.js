@@ -1,7 +1,7 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.2';
 const DISPLAY_KEY = 'randomit:display';
 const BOTES_KEY = 'randomit:botes';
 
@@ -132,7 +132,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 $('games').innerHTML = Object.entries(GAMES).map(([key, g]) => `
   <button class="game ${key}" type="button" data-game="${key}">
-    <span class="game-icon">${icon(key, 22)}</span>
+    <span class="game-icon">${icon(key, 24)}</span>
     <span class="game-text"><span class="game-name">${g.name}</span><span class="game-desc">${g.desc}</span><span class="game-bote" data-bote="${key}" hidden></span></span>
   </button>`).join('');
 
