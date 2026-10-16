@@ -1,7 +1,7 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.3.1';
 const DISPLAY_KEY = 'randomit:display';
 const BOTES_KEY = 'randomit:botes';
 
@@ -9,34 +9,34 @@ const BOTES_KEY = 'randomit:botes';
 const GAMES = {
   euromillones: {
     name: 'Euromillones',
-    desc: '5 números del 1 al 50 y 2 estrellas del 1 al 12',
+    desc: '5 números (1–50) + 2 estrellas (1–12)',
     groups: [{ label: 'Números', count: 5, max: 50 }, { label: 'Estrellas', count: 2, max: 12, star: true }],
   },
   eurodreams: {
     name: 'EuroDreams',
-    desc: '6 números del 1 al 40 y 1 sueño del 1 al 5',
+    desc: '6 números (1–40) + 1 sueño (1–5)',
     groups: [{ label: 'Números', count: 6, max: 40 }, { label: 'Sueño', count: 1, max: 5, key: true }],
     // El primer premio es una renta fija, no un bote
     prize: { card: 'Premio 20.000 €/mes · 30 años', draw: '20.000 € al mes durante 30 años' },
   },
   primitiva: {
     name: 'La Primitiva',
-    desc: '6 números del 1 al 49 y el reintegro del 0 al 9',
+    desc: '6 números (1–49) + reintegro (0–9)',
     groups: [{ label: 'Números', count: 6, max: 49 }, { label: 'Reintegro', count: 1, min: 0, max: 9, key: true }],
   },
   gordo: {
     name: 'El Gordo de la Primitiva',
-    desc: '5 números del 1 al 54 y el número clave del 0 al 9',
+    desc: '5 números (1–54) + número clave (0–9)',
     groups: [{ label: 'Números', count: 5, max: 54 }, { label: 'Número clave', count: 1, min: 0, max: 9, key: true }],
   },
   bonoloto: {
     name: 'Bonoloto',
-    desc: '6 números del 1 al 49',
+    desc: '6 números (1–49)',
     groups: [{ label: 'Números', count: 6, max: 49 }],
   },
   quiniela: {
     name: 'La Quiniela',
-    desc: '14 partidos con 1 X 2 y el Pleno al 15',
+    desc: '14 partidos 1 X 2 + Pleno al 15',
     quiniela: true,
   },
 };
@@ -52,7 +52,6 @@ const ICONS = {
   bonoloto: '<circle cx="12" cy="7.5" r="4"/><circle cx="7.5" cy="15.5" r="4"/><circle cx="16.5" cy="15.5" r="4"/>',
   quiniela: '<circle cx="12" cy="12" r="8.5"/><path d="M12 8.5l3.3 2.4-1.3 3.9h-4l-1.3-3.9z"/><path d="M12 8.5V3.5M15.3 10.9l4.6-1.6M14 14.8l2.8 4M10 14.8l-2.8 4M8.7 10.9L4.1 9.3"/>',
   // Interfaz
-  go: '<path d="M9 5l7 7-7 7"/>',
   palette: '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1-.1-2.2 1.1-2.2H17a4 4 0 0 0 4-4c0-5.5-4-10-9-10z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/>',
 };
 const icon = (name, size = 22) =>
@@ -133,9 +132,8 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 $('games').innerHTML = Object.entries(GAMES).map(([key, g]) => `
   <button class="game ${key}" type="button" data-game="${key}">
-    <span class="game-icon">${icon(key, 28)}</span>
+    <span class="game-icon">${icon(key, 22)}</span>
     <span class="game-text"><span class="game-name">${g.name}</span><span class="game-desc">${g.desc}</span><span class="game-bote" data-bote="${key}" hidden></span></span>
-    <span class="game-go">${icon('go', 18)}</span>
   </button>`).join('');
 
 $('games').addEventListener('click', (e) => {
