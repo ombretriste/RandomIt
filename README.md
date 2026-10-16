@@ -2,7 +2,7 @@
 
 *by OmT Finance*
 
-Versión **1.2.0** (se muestra en la pantalla de inicio). Las correcciones y ajustes suben el último número (1.0.1); las novedades, el del medio (1.1.0).
+Versión **1.3.0** (se muestra en la pantalla de inicio). Las correcciones y ajustes suben el último número (1.0.1); las novedades, el del medio (1.1.0).
 
 App web instalable (PWA) que genera combinaciones aleatorias para los sorteos de Loterías y Apuestas del Estado.
 
@@ -12,11 +12,12 @@ App web instalable (PWA) que genera combinaciones aleatorias para los sorteos de
 - Siempre en vertical: en Android la app instalada se bloquea en vertical; en iPhone, que no permite bloquearla, se muestra un aviso para girar el móvil.
 - Al pulsar un juego se abre una ventana emergente: el bombo gira, los números van cambiando y se fijan uno a uno. **Otra combinación** repite el sorteo.
   - **Euromillones**: 5 números del 1 al 50 y 2 estrellas del 1 al 12.
-  - **La Primitiva**: 6 números del 1 al 49.
+  - **EuroDreams**: 6 números del 1 al 40 y 1 sueño del 1 al 5.
+  - **La Primitiva**: 6 números del 1 al 49 y el reintegro del 0 al 9.
   - **El Gordo de la Primitiva**: 5 números del 1 al 54 y el número clave del 0 al 9.
   - **Bonoloto**: 6 números del 1 al 49.
   - **La Quiniela**: 1, X o 2 en los 14 partidos y el Pleno al 15 (0, 1, 2 o M goles por equipo).
-- Cada juego muestra el **bote del próximo sorteo** y su fecha, en la tarjeta y en la ventana del resultado. Los datos vienen de la web oficial de Loterías y Apuestas del Estado a través de `api/botes` (función de Vercel, con 30 minutos de caché); sin conexión se muestran los últimos guardados mientras el sorteo no haya pasado.
+- Cada juego muestra el **bote del próximo sorteo** y su fecha, en la tarjeta y en la ventana del resultado. En EuroDreams, cuyo primer premio es fijo, se muestra «20.000 € al mes durante 30 años» con la fecha del próximo sorteo. Los datos vienen de la web oficial de Loterías y Apuestas del Estado a través de `api/botes` (función de Vercel, con 30 minutos de caché); sin conexión se muestran los últimos guardados mientras el sorteo no haya pasado.
 - Los números salen del generador criptográfico del navegador (`crypto.getRandomValues`), sin sesgo, y se muestran ordenados.
 - Si el sistema tiene activado «Reducir movimiento», el resultado aparece sin animación.
 

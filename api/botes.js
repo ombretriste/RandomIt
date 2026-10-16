@@ -8,6 +8,7 @@
 
 const GAME_IDS = {
   euromillones: 'EMIL',
+  eurodreams: 'EDMS', // su primer premio es una renta fija; la app solo usa la fecha
   primitiva: 'LAPR',
   gordo: 'ELGR',
   bonoloto: 'BONO',

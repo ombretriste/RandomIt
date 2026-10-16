@@ -1,7 +1,7 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 const DISPLAY_KEY = 'randomit:display';
 const BOTES_KEY = 'randomit:botes';
 
@@ -12,10 +12,17 @@ const GAMES = {
     desc: '5 números del 1 al 50 y 2 estrellas del 1 al 12',
     groups: [{ label: 'Números', count: 5, max: 50 }, { label: 'Estrellas', count: 2, max: 12, star: true }],
   },
+  eurodreams: {
+    name: 'EuroDreams',
+    desc: '6 números del 1 al 40 y 1 sueño del 1 al 5',
+    groups: [{ label: 'Números', count: 6, max: 40 }, { label: 'Sueño', count: 1, max: 5, key: true }],
+    // El primer premio es una renta fija, no un bote
+    prize: { card: 'Premio 20.000 €/mes · 30 años', draw: '20.000 € al mes durante 30 años' },
+  },
   primitiva: {
     name: 'La Primitiva',
-    desc: '6 números del 1 al 49',
-    groups: [{ label: 'Números', count: 6, max: 49 }],
+    desc: '6 números del 1 al 49 y el reintegro del 0 al 9',
+    groups: [{ label: 'Números', count: 6, max: 49 }, { label: 'Reintegro', count: 1, min: 0, max: 9, key: true }],
   },
   gordo: {
     name: 'El Gordo de la Primitiva',
@@ -39,6 +46,7 @@ const GOALS = ['0', '1', '2', 'M'];
 const ICONS = {
   // Juegos
   euromillones: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  eurodreams: '<path d="M19.5 14.5a8 8 0 0 1-10-10 8 8 0 1 0 10 10z"/><path d="M17 3.5v4M15 5.5h4"/>',
   primitiva: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><g fill="currentColor" stroke="none"><circle cx="9.5" cy="8" r="1.2"/><circle cx="14.5" cy="8" r="1.2"/><circle cx="9.5" cy="12" r="1.2"/><circle cx="14.5" cy="12" r="1.2"/><circle cx="9.5" cy="16" r="1.2"/></g><circle cx="14.5" cy="16" r="1.6"/>',
   gordo: '<path d="M4.5 17l-1.5-9 5 3.8L12 5l4 6.8L21 8l-1.5 9z"/><path d="M5 20.5h14"/>',
   bonoloto: '<circle cx="12" cy="7.5" r="4"/><circle cx="7.5" cy="15.5" r="4"/><circle cx="16.5" cy="15.5" r="4"/>',
@@ -167,14 +175,16 @@ function boteCardText(key) {
   const b = currentBote(key);
   if (!b) return '';
   const date = drawDate(b.fecha);
-  return `Bote ${fmtBote(b.bote)} · ${DAYS[date.getDay()].slice(0, 3)} ${date.getDate()} ${MONTHS[date.getMonth()].slice(0, 3)}`;
+  const prize = GAMES[key].prize?.card || `Bote ${fmtBote(b.bote)}`;
+  return `${prize} · ${DAYS[date.getDay()].slice(0, 3)} ${date.getDate()} ${MONTHS[date.getMonth()].slice(0, 3)}`;
 }
 
 function boteDrawText(key) {
   const b = currentBote(key);
   if (!b) return '';
   const date = drawDate(b.fecha);
-  return `Bote de ${fmtBote(b.bote)} · ${DAYS[date.getDay()]} ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
+  const prize = GAMES[key].prize?.draw || `Bote de ${fmtBote(b.bote)}`;
+  return `${prize} · ${DAYS[date.getDay()]} ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
 }
 
 function renderBotes() {
