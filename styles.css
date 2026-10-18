@@ -662,4 +662,5 @@ main {
    batería). Se baja la barra superior para que el título y los iconos queden fuera. */
 @supports (padding-top: env(safe-area-inset-top)) {
   .topbar { padding-top: calc(env(safe-area-inset-top) + 14px); }
+  .app { --top-h: calc(72px + env(safe-area-inset-top)); } /* la barra crece lo mismo: el botón no toca la línea */
 }

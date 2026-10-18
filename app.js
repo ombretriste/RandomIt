@@ -1,7 +1,7 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.3.3';
+const APP_VERSION = '1.3.4';
 const DISPLAY_KEY = 'randomit:display';
 const BOTES_KEY = 'randomit:botes';
 
