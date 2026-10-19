@@ -2,7 +2,7 @@
 
 *by OmT Finance*
 
-Versión **1.3.5** (se muestra en la pantalla de inicio). Las correcciones y ajustes suben el último número (1.0.1); las novedades, el del medio (1.1.0).
+Versión **1.3.6** (se muestra en la pantalla de inicio). Las correcciones y ajustes suben el último número (1.0.1); las novedades, el del medio (1.1.0).
 
 App web instalable (PWA) que genera combinaciones aleatorias para los sorteos de Loterías y Apuestas del Estado.
 
@@ -17,7 +17,6 @@ App web instalable (PWA) que genera combinaciones aleatorias para los sorteos de
   - **El Gordo de la Primitiva**: 5 números del 1 al 54 y el número clave del 0 al 9.
   - **Bonoloto**: 6 números del 1 al 49.
   - **La Quiniela**: 1, X o 2 en los 14 partidos y el Pleno al 15 (0, 1, 2 o M goles por equipo).
-- Cada juego tiene un enlace a su página en la web oficial de Loterías y Apuestas del Estado, donde se ve el bote del próximo sorteo (la web oficial bloquea las consultas automáticas, así que la app no puede mostrarlo directamente). En EuroDreams, cuyo primer premio es fijo, se indica «20.000 € al mes durante 30 años».
 - Los números salen del generador criptográfico del navegador (`crypto.getRandomValues`), sin sesgo, y se muestran ordenados.
 - Si el sistema tiene activado «Reducir movimiento», el resultado aparece sin animación.
 

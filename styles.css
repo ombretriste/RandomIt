@@ -251,6 +251,7 @@ main {
   align-items: center;
   gap: 14px;
   width: 100%;
+  min-height: 88px;
   padding: 13px 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -269,10 +270,8 @@ main {
   background: radial-gradient(80% 120% at 0% 0%, color-mix(in srgb, var(--c) 16%, transparent), transparent 60%);
   pointer-events: none;
 }
-.game:has(.game-hit:active) { transform: scale(.98); border-color: color-mix(in srgb, var(--c) 55%, transparent); }
-/* Botón invisible que cubre toda la tarjeta; el enlace a la web oficial queda por encima */
-.game-hit { position: absolute; inset: 0; z-index: 1; margin: 0; padding: 0; border: 0; background: transparent; border-radius: inherit; }
-.game-icon, .game-text { position: relative; pointer-events: none; }
+.game:active { transform: scale(.98); border-color: color-mix(in srgb, var(--c) 55%, transparent); }
+.game-icon, .game-name { position: relative; }
 .game.euromillones { --c: var(--euro); }
 .game.eurodreams { --c: var(--dreams); }
 .game.primitiva { --c: var(--primi); }
@@ -287,22 +286,16 @@ main {
   color: var(--c);
   background: color-mix(in srgb, var(--c) 10%, transparent);
 }
-.game-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.game-name { font-size: 19px; font-weight: 300; letter-spacing: .01em; line-height: 1.25; }
-/* Una sola línea cada texto, para que quepan todos los juegos en la pantalla */
-.game-name, .game-desc, .game-bote { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.game-desc { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
-.game-bote {
-  position: relative;
-  z-index: 2;
-  align-self: flex-start;
-  max-width: 100%;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--c);
-  line-height: 1.35;
-  text-decoration: none;
-  pointer-events: auto;
+/* Solo el nombre, grande y en una línea; el alto fijo mantiene el tamaño de las tarjetas en el iPhone */
+.game-name {
+  min-width: 0;
+  font-size: 25px;
+  font-weight: 300;
+  letter-spacing: .005em;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- Menú ⋯ ---------- */
@@ -445,17 +438,6 @@ main {
 .draw-sheet.quiniela { --c: var(--quini); }
 .draw-sheet .sheet-title { margin: 0; }
 .draw-status { min-height: 1.3em; }
-.draw-bote {
-  display: inline-block;
-  color: var(--text);
-  text-decoration: none;
-  padding: 5px 12px;
-  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--c) 12%, transparent);
-  font-size: 13px;
-  font-weight: 600;
-}
 
 /* Bombo: aros finos que giran y bolitas que bailan dentro */
 .drum { width: 92px; height: 92px; color: var(--c); }

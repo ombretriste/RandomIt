@@ -1,48 +1,39 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.3.5';
+const APP_VERSION = '1.3.6';
 const DISPLAY_KEY = 'randomit:display';
-const OFFICIAL = 'https://www.loteriasyapuestas.es/es/';
 
 // Sorteos: grupos de bolas (cantidad, mínimo —1 si no se indica— y máximo) o, en La Quiniela, 14 partidos 1 X 2 y el Pleno al 15.
-// `page`: página del juego en la web oficial de Loterías y Apuestas del Estado, donde se ve el bote.
+// `desc` no se ve en la tarjeta: es el texto que leen los lectores de pantalla.
 const GAMES = {
   euromillones: {
     name: 'Euromillones',
-    page: 'euromillones',
     desc: '5 números (1–50) + 2 estrellas (1–12)',
     groups: [{ label: 'Números', count: 5, max: 50 }, { label: 'Estrellas', count: 2, max: 12, star: true }],
   },
   eurodreams: {
     name: 'EuroDreams',
-    page: 'eurodreams',
     desc: '6 números (1–40) + 1 sueño (1–5)',
     groups: [{ label: 'Números', count: 6, max: 40 }, { label: 'Sueño', count: 1, max: 5, key: true }],
-    // El primer premio es una renta fija, no un bote
-    prize: { card: '20.000 €/mes · 30 años', draw: '20.000 € al mes durante 30 años' },
   },
   primitiva: {
     name: 'La Primitiva',
-    page: 'la-primitiva',
     desc: '6 números (1–49) + reintegro (0–9)',
     groups: [{ label: 'Números', count: 6, max: 49 }, { label: 'Reintegro', count: 1, min: 0, max: 9, key: true }],
   },
   gordo: {
     name: 'El Gordo de la Primitiva',
-    page: 'gordo-primitiva',
     desc: '5 números (1–54) + número clave (0–9)',
     groups: [{ label: 'Números', count: 5, max: 54 }, { label: 'Número clave', count: 1, min: 0, max: 9, key: true }],
   },
   bonoloto: {
     name: 'Bonoloto',
-    page: 'bonoloto',
     desc: '6 números (1–49)',
     groups: [{ label: 'Números', count: 6, max: 49 }],
   },
   quiniela: {
     name: 'La Quiniela',
-    page: 'la-quiniela',
     desc: '14 partidos 1 X 2 + Pleno al 15',
     quiniela: true,
   },
@@ -137,26 +128,14 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 // ---------- Juegos ----------
 
-// Enlace a la página oficial del juego, donde se ve el bote (la web oficial no deja consultarlo desde la app).
-// En EuroDreams el primer premio es fijo, así que se muestra delante.
-function officialLink(key, long) {
-  const g = GAMES[key];
-  const prize = g.prize ? `${long ? g.prize.draw : g.prize.card} · ` : '';
-  const text = g.prize ? 'web oficial' : (long ? 'Ver el bote en la web oficial' : 'Ver bote oficial');
-  return `<a class="${long ? 'draw-bote' : 'game-bote'}" href="${OFFICIAL}${g.page}" target="_blank" rel="noopener">${prize}${text} ↗</a>`;
-}
-
-// Cada tarjeta es un div: el botón invisible la cubre entera y el enlace queda por encima
-// (no se puede poner un enlace dentro de un botón)
 $('games').innerHTML = Object.entries(GAMES).map(([key, g]) => `
-  <div class="game ${key}">
-    <button class="game-hit" type="button" data-game="${key}" aria-label="${g.name}: generar combinación"></button>
+  <button class="game ${key}" type="button" data-game="${key}" aria-label="${g.name}: ${g.desc}">
     <span class="game-icon">${icon(key, 24)}</span>
-    <span class="game-text"><span class="game-name">${g.name}</span><span class="game-desc">${g.desc}</span>${officialLink(key)}</span>
-  </div>`).join('');
+    <span class="game-name">${g.name}</span>
+  </button>`).join('');
 
 $('games').addEventListener('click', (e) => {
-  const btn = e.target.closest('button.game-hit');
+  const btn = e.target.closest('button.game');
   if (btn) openDraw(btn.dataset.game);
 });
 
@@ -195,7 +174,6 @@ function openDraw(key) {
     <div class="sheet draw-sheet ${key}" role="dialog" aria-modal="true" aria-labelledby="draw-title">
       <div class="drum">${DRUM}</div>
       <h2 class="sheet-title" id="draw-title">${game.name}</h2>
-      ${officialLink(key, true)}
       <p class="muted small draw-status" aria-live="polite"></p>
       <div class="draw-body"></div>
       <div class="draw-actions">
