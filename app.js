@@ -1,41 +1,48 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.3.4';
+const APP_VERSION = '1.3.5';
 const DISPLAY_KEY = 'randomit:display';
-const BOTES_KEY = 'randomit:botes';
+const OFFICIAL = 'https://www.loteriasyapuestas.es/es/';
 
-// Sorteos: grupos de bolas (cantidad, mínimo —1 si no se indica— y máximo) o, en La Quiniela, 14 partidos 1 X 2 y el Pleno al 15
+// Sorteos: grupos de bolas (cantidad, mínimo —1 si no se indica— y máximo) o, en La Quiniela, 14 partidos 1 X 2 y el Pleno al 15.
+// `page`: página del juego en la web oficial de Loterías y Apuestas del Estado, donde se ve el bote.
 const GAMES = {
   euromillones: {
     name: 'Euromillones',
+    page: 'euromillones',
     desc: '5 números (1–50) + 2 estrellas (1–12)',
     groups: [{ label: 'Números', count: 5, max: 50 }, { label: 'Estrellas', count: 2, max: 12, star: true }],
   },
   eurodreams: {
     name: 'EuroDreams',
+    page: 'eurodreams',
     desc: '6 números (1–40) + 1 sueño (1–5)',
     groups: [{ label: 'Números', count: 6, max: 40 }, { label: 'Sueño', count: 1, max: 5, key: true }],
     // El primer premio es una renta fija, no un bote
-    prize: { card: 'Premio 20.000 €/mes · 30 años', draw: '20.000 € al mes durante 30 años' },
+    prize: { card: '20.000 €/mes · 30 años', draw: '20.000 € al mes durante 30 años' },
   },
   primitiva: {
     name: 'La Primitiva',
+    page: 'la-primitiva',
     desc: '6 números (1–49) + reintegro (0–9)',
     groups: [{ label: 'Números', count: 6, max: 49 }, { label: 'Reintegro', count: 1, min: 0, max: 9, key: true }],
   },
   gordo: {
     name: 'El Gordo de la Primitiva',
+    page: 'gordo-primitiva',
     desc: '5 números (1–54) + número clave (0–9)',
     groups: [{ label: 'Números', count: 5, max: 54 }, { label: 'Número clave', count: 1, min: 0, max: 9, key: true }],
   },
   bonoloto: {
     name: 'Bonoloto',
+    page: 'bonoloto',
     desc: '6 números (1–49)',
     groups: [{ label: 'Números', count: 6, max: 49 }],
   },
   quiniela: {
     name: 'La Quiniela',
+    page: 'la-quiniela',
     desc: '14 partidos 1 X 2 + Pleno al 15',
     quiniela: true,
   },
@@ -130,86 +137,28 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 // ---------- Juegos ----------
 
+// Enlace a la página oficial del juego, donde se ve el bote (la web oficial no deja consultarlo desde la app).
+// En EuroDreams el primer premio es fijo, así que se muestra delante.
+function officialLink(key, long) {
+  const g = GAMES[key];
+  const prize = g.prize ? `${long ? g.prize.draw : g.prize.card} · ` : '';
+  const text = g.prize ? 'web oficial' : (long ? 'Ver el bote en la web oficial' : 'Ver bote oficial');
+  return `<a class="${long ? 'draw-bote' : 'game-bote'}" href="${OFFICIAL}${g.page}" target="_blank" rel="noopener">${prize}${text} ↗</a>`;
+}
+
+// Cada tarjeta es un div: el botón invisible la cubre entera y el enlace queda por encima
+// (no se puede poner un enlace dentro de un botón)
 $('games').innerHTML = Object.entries(GAMES).map(([key, g]) => `
-  <button class="game ${key}" type="button" data-game="${key}">
+  <div class="game ${key}">
+    <button class="game-hit" type="button" data-game="${key}" aria-label="${g.name}: generar combinación"></button>
     <span class="game-icon">${icon(key, 24)}</span>
-    <span class="game-text"><span class="game-name">${g.name}</span><span class="game-desc">${g.desc}</span><span class="game-bote" data-bote="${key}" hidden></span></span>
-  </button>`).join('');
+    <span class="game-text"><span class="game-name">${g.name}</span><span class="game-desc">${g.desc}</span>${officialLink(key)}</span>
+  </div>`).join('');
 
 $('games').addEventListener('click', (e) => {
-  const btn = e.target.closest('button.game');
+  const btn = e.target.closest('button.game-hit');
   if (btn) openDraw(btn.dataset.game);
 });
-
-// ---------- Botes del próximo sorteo (vía /api/botes) ----------
-
-const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-let botes = {};
-
-// 17 millones €, 31,5 millones €, 500.000 €
-function fmtBote(n) {
-  if (n >= 1e6) return `${(n / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 2 })} millones €`;
-  return `${n.toLocaleString('es-ES')} €`;
-}
-
-function drawDate(fecha) {
-  const [y, m, d] = fecha.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function todayStart() {
-  const t = new Date();
-  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
-}
-
-// Solo botes de sorteos que aún no han pasado
-function currentBote(key) {
-  const b = botes[key];
-  return b && drawDate(b.fecha) >= todayStart() ? b : null;
-}
-
-function boteCardText(key) {
-  const b = currentBote(key);
-  if (!b) return '';
-  const date = drawDate(b.fecha);
-  const prize = GAMES[key].prize?.card || `Bote ${fmtBote(b.bote)}`;
-  return `${prize} · ${DAYS[date.getDay()].slice(0, 3)} ${date.getDate()} ${MONTHS[date.getMonth()].slice(0, 3)}`;
-}
-
-function boteDrawText(key) {
-  const b = currentBote(key);
-  if (!b) return '';
-  const date = drawDate(b.fecha);
-  const prize = GAMES[key].prize?.draw || `Bote de ${fmtBote(b.bote)}`;
-  return `${prize} · ${DAYS[date.getDay()]} ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
-}
-
-function renderBotes() {
-  document.querySelectorAll('[data-bote]').forEach((el) => {
-    el.textContent = boteCardText(el.dataset.bote);
-    el.hidden = !el.textContent;
-  });
-  document.querySelectorAll('[data-bote-draw]').forEach((el) => {
-    el.textContent = boteDrawText(el.dataset.boteDraw);
-    el.hidden = !el.textContent;
-  });
-}
-
-async function loadBotes() {
-  // Primero los últimos guardados (sirven sin conexión), luego los de ahora
-  botes = load(BOTES_KEY, {}).botes || {};
-  renderBotes();
-  try {
-    const res = await fetch('api/botes', { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) throw new Error(res.status);
-    const json = await res.json();
-    if (!json.botes) throw new Error('formato');
-    botes = json.botes;
-    save(BOTES_KEY, json);
-    renderBotes();
-  } catch (_) { /* sin conexión o sin datos: se quedan los guardados */ }
-}
 
 // ---------- Sorteo (hoja emergente con animación) ----------
 
@@ -246,7 +195,7 @@ function openDraw(key) {
     <div class="sheet draw-sheet ${key}" role="dialog" aria-modal="true" aria-labelledby="draw-title">
       <div class="drum">${DRUM}</div>
       <h2 class="sheet-title" id="draw-title">${game.name}</h2>
-      <p class="draw-bote" data-bote-draw="${key}"${boteDrawText(key) ? '' : ' hidden'}>${boteDrawText(key)}</p>
+      ${officialLink(key, true)}
       <p class="muted small draw-status" aria-live="polite"></p>
       <div class="draw-body"></div>
       <div class="draw-actions">
@@ -559,7 +508,8 @@ document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 
 applyDisplay();
-loadBotes();
+// Botes guardados por versiones anteriores, que los leían de la web oficial
+try { localStorage.removeItem('randomit:botes'); } catch (_) { /* sin almacenamiento */ }
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
