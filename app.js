@@ -1,7 +1,7 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.3.6';
+const APP_VERSION = '1.3.7';
 const DISPLAY_KEY = 'randomit:display';
 
 // Sorteos: grupos de bolas (cantidad, mínimo —1 si no se indica— y máximo) o, en La Quiniela, 14 partidos 1 X 2 y el Pleno al 15.
