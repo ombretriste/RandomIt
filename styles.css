@@ -712,8 +712,12 @@ main {
 }
 
 /* iPhone (pantalla completa): iOS difumina una franja justo debajo de la barra de estado (hora,
-   batería). Se baja la barra superior para que el título y los iconos queden fuera. */
+   batería). Pruebas en el iPhone (Up to 40%): con el texto a ~14 px de la hora se ve difuminado por
+   arriba; a ~19 px, limpio. Queda a ~17 px, lo más arriba posible sin que se corte. */
 @supports (padding-top: env(safe-area-inset-top)) {
-  .topbar { padding-top: calc(env(safe-area-inset-top) + 14px); }
-  .app { --top-h: calc(72px + env(safe-area-inset-top)); } /* la barra crece lo mismo: el botón no toca la línea */
+  .topbar { padding-top: calc(env(safe-area-inset-top) + 11px); padding-bottom: 7px; }
+  .app { --top-h: calc(52px + env(safe-area-inset-top)); }
 }
+/* Botón ⋯ más pequeño, centrado con el título «RandomIt» y separado de la línea de debajo */
+.topbar .icon-btn { width: 34px; height: 34px; flex-basis: 34px; }
+.topbar .brand { line-height: 1; }
