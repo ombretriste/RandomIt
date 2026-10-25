@@ -2,7 +2,7 @@
 
 *by OmT Finance*
 
-Versión **1.3.7** (se muestra en la pantalla de inicio). Las correcciones y ajustes suben el último número (1.0.1); las novedades, el del medio (1.1.0).
+Versión **1.4.0** (se muestra en la pantalla de inicio). Las correcciones y ajustes suben el último número (1.0.1); las novedades, el del medio (1.1.0).
 
 App web instalable (PWA) que genera combinaciones aleatorias para los sorteos de Loterías y Apuestas del Estado.
 
@@ -22,6 +22,26 @@ App web instalable (PWA) que genera combinaciones aleatorias para los sorteos de
 
 En el menú ⋯ están las **opciones de visualización**: modo oscuro, claro o automático y cuatro fondos (Amatista, Rubí, Turquesa y Oro). Se guardan en el propio dispositivo (`localStorage`).
 
+## Avisos
+
+En el menú ⋯ → **Avisos** se activan las notificaciones: llegan **2 horas antes de que cierre** el plazo para jugar a cada sorteo elegido, aunque la app esté cerrada. Al tocar el aviso se abre la app y, tras pulsar Entrar, el sorteo de ese juego.
+
+| Juego | Días | Cierre | Aviso |
+|---|---|---|---|
+| Euromillones | martes y viernes | 20:30 | 18:30 |
+| EuroDreams | lunes y jueves | 20:30 | 18:30 |
+| La Primitiva | lunes, jueves y sábado | 21:15 | 19:15 |
+| El Gordo de la Primitiva | domingo | 21:00 | 19:00 |
+| Bonoloto | todos los días | 21:00 | 19:00 |
+
+Horas de España (`schedule.js`, que también usa el service worker). La Quiniela no avisa porque su cierre cambia cada jornada.
+
+Funcionamiento (mismo diseño que TaskCTRL): la app sube a `api/push` solo las horas de aviso de los próximos 14 días; el servidor manda a esas horas un push vacío y el service worker compone la notificación y vuelve a subir las horas. Necesita:
+
+1. **Upstash Redis** conectado al proyecto en Vercel (Storage). Puede ser la misma base de datos que las otras apps: las claves de RandomIt empiezan por `rit:`. Las claves VAPID se crean solas. `GET /api/push` debe responder `configured: true`.
+2. Un **cron** (cron-job.org) que llame cada 5 minutos a `https://randomit-seven.vercel.app/api/push?run`.
+3. En iPhone/iPad, la app añadida a la pantalla de inicio (iOS 16.4 o posterior).
+
 ## Instalar en el móvil
 
 En móvil y tablet, al entrar aparece un aviso con estos pasos (adaptados a iPhone/iPad o Android). Sale cada vez hasta que se marca «No mostrar más», y no aparece en escritorio ni cuando la app ya se abre desde el icono de la pantalla de inicio.
@@ -31,7 +51,7 @@ En móvil y tablet, al entrar aparece un aviso con estos pasos (adaptados a iPho
 
 ## Desarrollo
 
-Es un sitio estático sin dependencias ni paso de compilación. Para probarlo en local:
+Es un sitio estático sin dependencias ni paso de compilación, más la función `api/push.js` (avisos), que se ejecuta en Vercel. Para probar la parte estática en local:
 
 ```bash
 python3 -m http.server 8000

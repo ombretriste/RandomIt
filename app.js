@@ -1,8 +1,9 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.3.7';
+const APP_VERSION = '1.4.0';
 const DISPLAY_KEY = 'randomit:display';
+const NOTIF_KEY = 'randomit:notif';
 
 // Sorteos: grupos de bolas (cantidad, mínimo —1 si no se indica— y máximo) o, en La Quiniela, 14 partidos 1 X 2 y el Pleno al 15.
 // `desc` no se ve en la tarjeta: es el texto que leen los lectores de pantalla.
@@ -50,6 +51,9 @@ const ICONS = {
   bonoloto: '<circle cx="12" cy="7.5" r="4"/><circle cx="7.5" cy="15.5" r="4"/><circle cx="16.5" cy="15.5" r="4"/>',
   quiniela: '<circle cx="12" cy="12" r="8.5"/><path d="M12 8.5l3.3 2.4-1.3 3.9h-4l-1.3-3.9z"/><path d="M12 8.5V3.5M15.3 10.9l4.6-1.6M14 14.8l2.8 4M10 14.8l-2.8 4M8.7 10.9L4.1 9.3"/>',
   // Interfaz
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  bellOff: '<path d="M6 16.5V11a6 6 0 0 1 9.6-4.8M18 11v5.5l1.5 2h-12"/><path d="M10 20.5a2 2 0 0 0 4 0"/><path d="M4 4l16 16"/>',
+  send: '<path d="M20.5 3.5L10 14"/><path d="M20.5 3.5l-6.5 17-4-6.5-6.5-4z"/>',
   palette: '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1-.1-2.2 1.1-2.2H17a4 4 0 0 0 4-4c0-5.5-4-10-9-10z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/>',
 };
 const icon = (name, size = 22) =>
@@ -300,6 +304,7 @@ function runDraw(key, back) {
 // ---------- Menú ⋯ ----------
 
 const MENU = [
+  { label: 'Avisos', icon: 'bell', run: () => openNotifSheet() },
   { label: 'Opciones de visualización', icon: 'palette', run: () => openDisplaySheet() },
 ];
 
@@ -404,6 +409,218 @@ function openDisplaySheet() {
   draw();
 }
 
+// ---------- Avisos: 2 horas antes del cierre de cada sorteo ----------
+// Los horarios y el texto de los avisos están en schedule.js (lo comparte el service worker).
+// Ajustes en localStorage (NOTIF_KEY) y copia en IndexedDB para el service worker.
+
+const ua = navigator.userAgent;
+// El iPad con iPadOS se identifica como Mac, pero tiene pantalla táctil
+const isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/.test(ua);
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const canNotify = () => 'Notification' in window && 'serviceWorker' in navigator;
+const canPush = () => canNotify() && 'PushManager' in window;
+
+const DAY_NAMES = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const drawDays = (g) => (g.days.length === 7 ? 'todos los días' : g.days.map((d) => DAY_NAMES[d]).join(', ').replace(/, ([^,]+)$/, ' y $1'));
+
+let notif = { on: false, games: Object.keys(DRAWS), ...load(NOTIF_KEY, {}) };
+notif.games = notif.games.filter((k) => DRAWS[k]);
+let meta = {}; // { device, subscribed, last } — en IndexedDB, compartido con el service worker
+let serverOK = null; // null: sin comprobar · true/false
+let pendingGame = null; // juego del aviso tocado, para abrir su sorteo tras «Entrar»
+
+function toast(text) {
+  document.querySelector('.toast')?.remove();
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.setAttribute('role', 'status');
+  el.textContent = text;
+  document.body.append(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+async function saveNotif() {
+  save(NOTIF_KEY, notif);
+  await kvSet('notif', notif).catch(() => {});
+}
+
+async function saveMeta(patch) {
+  meta = { ...meta, ...patch };
+  await kvSet('meta', meta).catch(() => {});
+}
+
+async function checkServer() {
+  try {
+    const res = await fetch('api/push', { cache: 'no-store' });
+    serverOK = res.ok && (await res.json()).configured === true;
+  } catch (_) {
+    serverOK = false;
+  }
+  return serverOK;
+}
+
+const randomHex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, '0')).join('');
+const unb64u = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+
+// Suscribe este dispositivo al servidor de avisos y le sube las horas
+async function subscribePush() {
+  if (!canPush() || !(await checkServer())) { await saveMeta({ subscribed: false }); return false; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const { publicKey } = await pushApi({ action: 'key' });
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: unb64u(publicKey) });
+    }
+    const device = meta.device || randomHex(16);
+    await pushApi({ action: 'subscribe', device, sub: sub.toJSON() });
+    await saveMeta({ device, subscribed: true });
+    await syncSchedule();
+    return true;
+  } catch (_) {
+    await saveMeta({ subscribed: false });
+    return false;
+  }
+}
+
+async function refreshSchedule() {
+  if (!meta.subscribed) return;
+  try { await syncSchedule(); } catch (_) { /* sin conexión: se reintentará */ }
+}
+
+async function enableNotifications() {
+  if (!canNotify()) {
+    alert(isIOS && !isStandalone()
+      ? 'En el iPhone y el iPad los avisos solo funcionan con la app añadida a la pantalla de inicio. Añádela desde Safari (Compartir → Añadir a pantalla de inicio), ábrela desde su icono y actívalos ahí.'
+      : 'Este navegador no permite notificaciones.');
+    return false;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') {
+    alert('Sin permiso no puedo avisarte. Puedes darlo en los ajustes del móvil o del navegador (Notificaciones → RandomIt).');
+    return false;
+  }
+  notif.on = true;
+  await saveNotif();
+  const pushed = await subscribePush();
+  (await navigator.serviceWorker.ready).showNotification('Avisos activados ✅', {
+    body: pushed
+      ? 'Te avisaré 2 horas antes de que cierre cada sorteo que elijas.'
+      : 'El servidor de avisos no está disponible todavía: de momento no podré avisarte.',
+    icon: 'icons/icon-192.png',
+    tag: 'randomit-test',
+  });
+  return true;
+}
+
+async function disableNotifications() {
+  notif.on = false;
+  await saveNotif();
+  await refreshSchedule(); // sube una lista vacía: el servidor deja de avisar
+}
+
+async function sendTest() {
+  if (meta.subscribed) {
+    try {
+      await pushApi({ action: 'test', device: meta.device });
+      toast('Aviso enviado: llega en unos segundos');
+      return;
+    } catch (_) {
+      toast('El servidor no ha podido enviarlo');
+      return;
+    }
+  }
+  const n = buildNotification(null);
+  (await navigator.serviceWorker.ready).showNotification(n.title, { body: n.body, tag: 'randomit-test', icon: 'icons/icon-192.png' });
+}
+
+function openNotifSheet() {
+  closeSheet();
+  const back = document.createElement('div');
+  back.className = 'sheet-backdrop';
+  document.body.append(back);
+  back.addEventListener('click', (e) => { if (e.target === back) closeSheet(); });
+
+  const draw = () => {
+    const perm = canNotify() ? Notification.permission : 'unsupported';
+    const active = notif.on && perm === 'granted';
+    let status;
+    if (perm === 'unsupported') {
+      status = ['bad', 'Este navegador no puede mostrar avisos', isIOS && !isStandalone()
+        ? 'En iPhone y iPad: añade RandomIt a la pantalla de inicio desde Safari y ábrela desde su icono.' : 'Prueba con Chrome o Safari actualizados.'];
+    } else if (perm === 'denied') {
+      status = ['bad', 'Avisos bloqueados', 'Permite las notificaciones de RandomIt en los ajustes del móvil o del navegador.'];
+    } else if (!active) {
+      status = ['', 'Avisos desactivados', 'Actívalos y te avisaré 2 horas antes de que cierre cada sorteo.'];
+    } else if (meta.subscribed) {
+      status = ['ok', 'Avisos activados', 'Llegan aunque la app esté cerrada.'];
+    } else {
+      status = ['bad', 'Avisos sin servidor', serverOK === false
+        ? 'El servidor de avisos no está disponible (falta configurarlo en Vercel).' : 'Comprobando el servidor de avisos…'];
+    }
+    back.innerHTML = `
+      <div class="sheet" role="dialog" aria-modal="true" aria-label="Avisos">
+        <h2 class="sheet-title">Avisos</h2>
+        <div class="notif-status ${status[0]}">${icon(active ? 'bell' : 'bellOff', 22)}<span><b>${status[1]}</b><small>${status[2]}</small></span></div>
+        <div class="row-btns">
+          ${active
+            ? `<button type="button" class="ghost-btn" data-test>${icon('send', 17)} Probar aviso</button><button type="button" class="ghost-btn" data-off>${icon('bellOff', 17)} Desactivar</button>`
+            : perm !== 'unsupported' && perm !== 'denied' ? `<button type="button" class="done-btn" data-on>${icon('bell', 18)} Activar avisos</button>` : ''}
+        </div>
+        <p class="opt-label">Avisarme 2 horas antes del cierre de</p>
+        <div class="notif-games">
+          ${Object.entries(DRAWS).map(([k, g]) => `
+            <button type="button" class="notif-game ${k} ${notif.games.includes(k) ? 'on' : ''}" data-game-opt="${k}" aria-pressed="${notif.games.includes(k)}">
+              <span class="ng-icon">${icon(k, 18)}</span>
+              <span class="ng-text"><b>${g.name}</b><small>${drawDays(g)} · cierra a las ${closeLabel(k)}</small></span>
+              <span class="ng-check" aria-hidden="true"></span>
+            </button>`).join('')}
+        </div>
+        <p class="muted small">Horas de España. La Quiniela no tiene una hora de cierre fija (depende de los partidos de cada jornada), así que no avisa.</p>
+        <div class="body-actions"><button class="done-btn" type="button" data-close>Listo</button></div>
+      </div>`;
+  };
+  draw();
+  if (serverOK === null) checkServer().then(draw);
+  back.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-close]')) return closeSheet();
+    if (e.target.closest('[data-on]')) { await enableNotifications(); draw(); return; }
+    if (e.target.closest('[data-off]')) { await disableNotifications(); draw(); return; }
+    if (e.target.closest('[data-test]')) { sendTest(); return; }
+    const opt = e.target.closest('[data-game-opt]');
+    if (opt) {
+      const k = opt.dataset.gameOpt;
+      notif.games = notif.games.includes(k) ? notif.games.filter((x) => x !== k) : [...notif.games, k];
+      await saveNotif();
+      draw();
+      refreshSchedule();
+    }
+  });
+}
+
+async function initNotifications() {
+  // Abierta desde un aviso (app cerrada): ?jugar=<juego>
+  const want = new URLSearchParams(location.search).get('jugar');
+  if (want && GAMES[want]) {
+    pendingGame = want;
+    history.replaceState(null, '', location.pathname);
+  }
+  // Aviso tocado con la app ya abierta
+  navigator.serviceWorker?.addEventListener('message', (e) => {
+    const game = e.data && e.data.type === 'open-game' && e.data.game;
+    if (!game || !GAMES[game]) return;
+    if ($('splash')) pendingGame = game;
+    else openDraw(game);
+  });
+  try { meta = (await kvGet('meta')) || {}; } catch (_) { meta = {}; }
+  await kvSet('notif', notif).catch(() => {});
+  if (notif.on && canPush() && Notification.permission === 'granted') {
+    if (meta.subscribed) refreshSchedule();
+    else subscribePush();
+  }
+}
+
 // ---------- Pantalla de inicio ----------
 
 $('enter-btn').addEventListener('click', () => {
@@ -413,18 +630,14 @@ $('enter-btn').addEventListener('click', () => {
   setTimeout(() => {
     $('splash').remove();
     body.classList.remove('booting', 'entering');
-    maybeShowInstallHint();
+    // Si se ha abierto desde un aviso, directo al sorteo de ese juego
+    if (pendingGame) { openDraw(pendingGame); pendingGame = null; } else maybeShowInstallHint();
   }, 820);
 });
 
 // ---------- Aviso: añadir a la pantalla de inicio (solo móvil y tablet) ----------
 
 const INSTALL_HINT_KEY = 'randomit:installHint';
-const ua = navigator.userAgent;
-// El iPad con iPadOS se identifica como Mac, pero tiene pantalla táctil
-const isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-const isAndroid = /Android/.test(ua);
-const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
 const HINT_ICONS = {
   share: '<path d="M12 3.5v11M8 7.5l4-4 4 4"/><path d="M7 10.5H6a1.5 1.5 0 0 0-1.5 1.5v7A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5h-1"/>',
@@ -486,6 +699,7 @@ document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 
 applyDisplay();
+initNotifications();
 // Botes guardados por versiones anteriores, que los leían de la web oficial
 try { localStorage.removeItem('randomit:botes'); } catch (_) { /* sin almacenamiento */ }
 
