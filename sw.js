@@ -1,5 +1,5 @@
 // Cambia la versión al modificar archivos para que los móviles descarguen la nueva versión
-const CACHE = 'randomit-v15';
+const CACHE = 'randomit-v16';
 const ASSETS = [
   './',
   'index.html',

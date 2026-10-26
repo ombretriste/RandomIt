@@ -151,7 +151,6 @@ body.booting .app { opacity: 0; visibility: hidden; }
 
 /* Sin botón Entrar: el logo aparece (el arco se dibuja), se mantiene un instante y la pantalla
    de inicio se vuelve cristal translúcido que deja ver los chats mientras se desvanece. */
-.splash .logo-mark { animation: sp-logo-in .7s cubic-bezier(.2, .7, .2, 1) both; }
 .splash .logo-arc { stroke-dasharray: 1; stroke-dashoffset: 1; animation: sp-arc 1s .12s cubic-bezier(.4, 0, .2, 1) forwards; }
 .splash .logo-dot { opacity: 0; animation: fade-to-1 .25s 1.05s ease forwards; }
 .splash .wordmark { animation: sp-word-in .65s .18s cubic-bezier(.2, .7, .2, 1) both; }
@@ -159,18 +158,15 @@ body.booting .app { opacity: 0; visibility: hidden; }
 
 /* La app solo se funde; el leve zoom va en la lista. Un transform en .app haría que la barra fija
    del botón «Nuevo chat» se colocara respecto a la app (pegada a los chats) y saltara al terminar. */
-body.entering .app { visibility: visible; animation: fade-in-app .75s ease forwards; }
-body.entering .app main { animation: app-in .75s ease forwards; }
-body.entering .splash { animation: splash-glass .8s ease forwards; pointer-events: none; }
-body.entering .sp-main { animation: splash-content .4s ease forwards; }
+body.entering .app { visibility: visible; animation: fade-in-app 1.1s ease forwards; }
+body.entering .app main { animation: app-in 1.1s ease forwards; }
+body.entering .splash { animation: splash-glass 1.2s ease forwards; pointer-events: none; }
+body.entering .sp-main { animation: splash-content .6s ease forwards; }
 
-@keyframes sp-logo-in {
-  from { opacity: 0; transform: scale(.86); filter: blur(6px) drop-shadow(0 0 0 transparent); }
-}
 @keyframes sp-arc { to { stroke-dashoffset: 0; } }
 @keyframes fade-to-1 { to { opacity: 1; } }
 @keyframes sp-word-in {
-  from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+  from { opacity: 0; transform: translateY(10px); }
 }
 @keyframes fade-in-app {
   from { opacity: 0; }

@@ -1,7 +1,7 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.4.2';
+const APP_VERSION = '1.4.3';
 const DISPLAY_KEY = 'randomit:display';
 const NOTIF_KEY = 'randomit:notif';
 
@@ -626,7 +626,7 @@ async function initNotifications() {
 // Sin botón Entrar: el logo aparece (el arco se dibuja), se ve un instante y se pasa sola a la app
 // con la transición de cristal, como en ChatCTRL.
 const SPLASH_HOLD_MS = 1700;
-const SPLASH_OUT_MS = 800;
+const SPLASH_OUT_MS = 1200;
 function enterApp() {
   const body = document.body;
   if (!$('splash') || body.classList.contains('entering')) return;
