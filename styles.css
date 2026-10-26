@@ -120,13 +120,12 @@ button:disabled { cursor: default; }
   position: fixed;
   inset: 0;
   z-index: 100;
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 6vh);
 }
-.sp-top, .sp-bottom { display: flex; flex-direction: column; align-items: center; }
-.sp-top { justify-content: flex-end; gap: 22px; padding-bottom: 6vh; }
-.sp-bottom { justify-content: flex-start; gap: 14px; padding-top: 8vh; }
+.sp-main { display: flex; flex-direction: column; align-items: center; gap: 22px; }
 .logo-slot { display: inline-flex; }
 .logo-mark { filter: drop-shadow(0 0 18px rgba(181, 124, 255, .35)); }
 .wordmark { display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -145,32 +144,41 @@ button:disabled { cursor: default; }
   margin-right: -.32em;
   color: var(--muted);
 }
-.sp-enter {
-  width: 104px; height: 104px;
-  display: grid; place-items: center;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  color: var(--text);
-  box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 8%, transparent), 0 10px 30px var(--shadow);
-  transition: transform .15s ease;
-}
-.sp-enter:active { transform: scale(.94); }
-.sp-label { margin: 0; font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: .02em; }
 
 /* Mientras se ve la pantalla de inicio, la app espera oculta debajo */
 body.booting { overflow: hidden; }
 body.booting .app { opacity: 0; visibility: hidden; }
 
-/* Transición al entrar: la pantalla de inicio se vuelve cristal translúcido
-   (se ven los juegos difuminados detrás) y se desvanece. */
-body.entering .app { visibility: visible; animation: app-in .75s ease forwards; }
-body.entering .splash { animation: splash-glass .8s ease forwards; pointer-events: none; }
-body.entering .sp-top, body.entering .sp-bottom { animation: splash-content .35s ease forwards; }
+/* Sin botón Entrar: el logo aparece (el arco se dibuja), se mantiene un instante y la pantalla
+   de inicio se vuelve cristal translúcido que deja ver los chats mientras se desvanece. */
+.splash .logo-mark { animation: sp-logo-in .7s cubic-bezier(.2, .7, .2, 1) both; }
+.splash .logo-arc { stroke-dasharray: 1; stroke-dashoffset: 1; animation: sp-arc 1s .12s cubic-bezier(.4, 0, .2, 1) forwards; }
+.splash .logo-dot { opacity: 0; animation: fade-to-1 .25s 1.05s ease forwards; }
+.splash .wordmark { animation: sp-word-in .65s .18s cubic-bezier(.2, .7, .2, 1) both; }
+.splash .sp-version { animation: fade-in .4s .2s ease both; }
 
+/* La app solo se funde; el leve zoom va en la lista. Un transform en .app haría que la barra fija
+   del botón «Nuevo chat» se colocara respecto a la app (pegada a los chats) y saltara al terminar. */
+body.entering .app { visibility: visible; animation: fade-in-app .75s ease forwards; }
+body.entering .app main { animation: app-in .75s ease forwards; }
+body.entering .splash { animation: splash-glass .8s ease forwards; pointer-events: none; }
+body.entering .sp-main { animation: splash-content .4s ease forwards; }
+
+@keyframes sp-logo-in {
+  from { opacity: 0; transform: scale(.86); filter: blur(6px) drop-shadow(0 0 0 transparent); }
+}
+@keyframes sp-arc { to { stroke-dashoffset: 0; } }
+@keyframes fade-to-1 { to { opacity: 1; } }
+@keyframes sp-word-in {
+  from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+}
+@keyframes fade-in-app {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 @keyframes app-in {
-  from { opacity: 0; transform: scale(.985); }
-  to { opacity: 1; transform: none; }
+  from { transform: scale(.985); }
+  to { transform: none; }
 }
 @keyframes splash-glass {
   0% { -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); background: transparent; }
@@ -619,7 +627,8 @@ main {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body.entering .app, body.entering .splash, body.entering .sp-top, body.entering .sp-bottom { animation-duration: .01s; }
+  body.entering .app, body.entering .app main, body.entering .splash, body.entering .sp-main,
+  .splash .logo-mark, .splash .logo-arc, .splash .logo-dot, .splash .wordmark, .splash .sp-version { animation-duration: .01s; animation-delay: 0s; }
   .ball, .drum * { animation: none !important; }
 }
 

@@ -1,7 +1,7 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.4.2';
 const DISPLAY_KEY = 'randomit:display';
 const NOTIF_KEY = 'randomit:notif';
 
@@ -72,8 +72,8 @@ function logoSVG(size) {
       </defs>
       <circle cx="60" cy="60" r="52" stroke="url(#${id})" stroke-width="1.2" opacity=".55"/>
       <circle cx="60" cy="60" r="42" stroke="url(#${id})" stroke-width=".8" stroke-dasharray="2 5" opacity=".6"/>
-      <path d="M60 8 A52 52 0 0 1 90.56 102.07" stroke="url(#${id})" stroke-width="3"/>
-      <circle cx="90.56" cy="102.07" r="3" fill="#ffd36b" stroke="none"/>
+      <path class="logo-arc" pathLength="1" d="M60 8 A52 52 0 0 1 90.56 102.07" stroke="url(#${id})" stroke-width="3"/>
+      <circle class="logo-dot" cx="90.56" cy="102.07" r="3" fill="#ffd36b" stroke="none"/>
       <g transform="rotate(-12 60 60)">
         <rect x="40" y="40" width="40" height="40" rx="9" stroke="url(#${id})" stroke-width="1.8"/>
         <g fill="url(#${id})">
@@ -623,17 +623,24 @@ async function initNotifications() {
 
 // ---------- Pantalla de inicio ----------
 
-$('enter-btn').addEventListener('click', () => {
+// Sin botón Entrar: el logo aparece (el arco se dibuja), se ve un instante y se pasa sola a la app
+// con la transición de cristal, como en ChatCTRL.
+const SPLASH_HOLD_MS = 1700;
+const SPLASH_OUT_MS = 800;
+function enterApp() {
   const body = document.body;
-  if (body.classList.contains('entering')) return;
+  if (!$('splash') || body.classList.contains('entering')) return;
   body.classList.add('entering');
   setTimeout(() => {
     $('splash').remove();
     body.classList.remove('booting', 'entering');
     // Si se ha abierto desde un aviso, directo al sorteo de ese juego
     if (pendingGame) { openDraw(pendingGame); pendingGame = null; } else maybeShowInstallHint();
-  }, 820);
-});
+  }, SPLASH_OUT_MS);
+}
+setTimeout(enterApp, SPLASH_HOLD_MS);
+// Abierta desde un aviso: se entra antes
+setTimeout(() => { if (pendingGame) enterApp(); }, 380);
 
 // ---------- Aviso: añadir a la pantalla de inicio (solo móvil y tablet) ----------
 
