@@ -1,7 +1,7 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.5.4';
+const APP_VERSION = '1.6.0';
 // Uso de la app en Vercel Analytics: es una sola página, así que cada función se cuenta como una
 // página virtual. Solo se envía el nombre de la función, nunca datos de la app.
 const track = (path) => { try { window.va?.('pageview', { path }); } catch (_) { /* sin analítica */ } };
@@ -47,6 +47,7 @@ const SIGNS = ['1', 'X', '2'];
 const GOALS = ['0', '1', '2', 'M'];
 
 const ICONS = {
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".9" fill="currentColor" stroke="none"/>',
   // Juegos
   euromillones: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
   eurodreams: '<path d="M19.5 14.5a8 8 0 0 1-10-10 8 8 0 1 0 10 10z"/><path d="M17 3.5v4M15 5.5h4"/>',
@@ -310,6 +311,7 @@ function runDraw(key, back) {
 const MENU = [
   { label: 'Avisos', icon: 'bell', run: () => openNotifSheet() },
   { label: 'Opciones de visualización', icon: 'palette', run: () => openDisplaySheet() },
+  { label: 'Información', icon: 'info', run: () => openInfoSheet() },
 ];
 
 function openMenu() {
@@ -342,6 +344,24 @@ document.addEventListener('click', (e) => {
   if (!$('menu').hidden && !e.target.closest('#menu')) closeMenu();
 });
 window.addEventListener('resize', closeMenu);
+
+function openInfoSheet() {
+  closeSheet();
+  const back = document.createElement('div');
+  back.className = 'sheet-backdrop center';
+  back.innerHTML = `
+    <div class="sheet info-sheet" role="dialog" aria-modal="true" aria-label="Información">
+      <span class="install-logo">${logoSVG(56)}</span>
+      <h2 class="sheet-title">RandomIt</h2>
+      <p class="small muted">Versión ${APP_VERSION} · by OmT Finance</p>
+      <p class="small">Gira el bombo y genera combinaciones para Euromillones, EuroDreams, La Primitiva, El Gordo, Bonoloto y La Quiniela.</p>
+      <p class="small muted">Las combinaciones se generan al azar en tu dispositivo y ninguna tiene más probabilidades que otra. Juega con responsabilidad.</p>
+      <div class="info-actions"><button type="button" class="done-btn" data-close>Cerrar</button></div>
+    </div>`;
+  document.body.append(back);
+  back.addEventListener('click', (e) => { if (e.target === back) closeSheet(); });
+  back.querySelector('[data-close]').addEventListener('click', closeSheet);
+}
 
 // ---------- Opciones de visualización (modo y fondo) ----------
 
