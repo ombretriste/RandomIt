@@ -202,7 +202,8 @@ body.entering .sp-main { animation: splash-content .6s ease forwards; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: env(safe-area-inset-top) 16px 0;
+  margin-inline: calc(50% - 50vw); /* logo y menú en las esquinas de la pantalla, aunque el contenido vaya centrado */
+  padding: env(safe-area-inset-top) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
 }
 /* La barra llega de lado a lado de la pantalla aunque su contenido vaya centrado (iPad y ordenador) */
 .topbar::before {
