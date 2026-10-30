@@ -2,7 +2,7 @@
 
 *by OmT Finance*
 
-Versión **1.4.6** (se muestra en la pantalla de inicio). Las correcciones y ajustes suben el último número (1.0.1); las novedades, el del medio (1.1.0).
+Versión **1.5.0** (se muestra en la pantalla de inicio). Las correcciones y ajustes suben el último número (1.0.1); las novedades, el del medio (1.1.0).
 
 App web instalable (PWA) que genera combinaciones aleatorias para los sorteos de Loterías y Apuestas del Estado.
 
@@ -48,6 +48,10 @@ En móvil y tablet, al entrar aparece un aviso con estos pasos (adaptados a iPho
 
 - **iPhone (Safari):** Compartir → «Añadir a pantalla de inicio».
 - **Android (Chrome):** menú ⋮ → «Instalar aplicación».
+
+## Analítica
+
+Vercel Web Analytics (se activa en la pestaña Analytics del proyecto de Vercel, sin cookies). La app es una sola página, así que cada función se cuenta como una página virtual con `track()` en `app.js`. Solo se envía el nombre de la función, nunca datos de la app, y `beforeSend` (en `index.html`) quita de la dirección lo que va tras `?` o `#`.
 
 ## Desarrollo
 
