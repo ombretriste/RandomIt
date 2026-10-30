@@ -81,7 +81,7 @@ html, body {
   overscroll-behavior-y: none;
 }
 
-body { min-height: 100%; min-height: 100lvh; background: transparent; }
+body { min-height: 100%; min-height: 100lvh; background: transparent; overflow-x: clip; }
 
 /* Fondo: manchas de color difuminadas y ondas casi imperceptibles (solo CSS, estático) */
 body::before {
@@ -203,6 +203,16 @@ body.entering .sp-main { animation: splash-content .6s ease forwards; }
   justify-content: space-between;
   gap: 12px;
   padding: env(safe-area-inset-top) 16px 0;
+}
+/* La barra llega de lado a lado de la pantalla aunque su contenido vaya centrado (iPad y ordenador) */
+.topbar::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 50vw);
+  width: 100vw;
   background: var(--bar-bg);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
