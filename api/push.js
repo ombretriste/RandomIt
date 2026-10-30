@@ -129,7 +129,7 @@ module.exports = async (req, res) => {
   if (!REDIS_URL || !REDIS_TOKEN) {
     return res.status(req.method === 'GET' ? 200 : 503).json({ configured: false, error: 'not-configured', vars });
   }
-  if (req.method === 'GET') {
+  if (req.method === 'GET' || req.method === 'HEAD') { // el cron puede estar configurado con cualquiera de los dos
     const q = req.query || Object.fromEntries(new URL(req.url, 'http://x').searchParams);
     if ('run' in q) return res.status(200).json({ ok: true, ...(await runDue(subject)) });
     try {
