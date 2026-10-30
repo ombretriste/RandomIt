@@ -5,7 +5,9 @@
 // que mira qué sorteo cierra y compone la notificación. Por eso no hace falta cifrar contenido:
 // solo la firma VAPID (ES256), que se hace con WebCrypto. Mismo diseño que TaskCTRL.
 //
-//   GET  /api/push                      -> { configured, devices } | { configured: false, vars }  (comprobación)
+//   GET  /api/push                      -> { configured, devices, pending, lastRun, lastSend } | { configured: false, vars }
+//                                          (comprobación: pending = dispositivos con avisos programados, lastRun =
+//                                          última llamada del cron, lastSend = { at, status } del último push enviado)
 //   GET  /api/push?run                  -> envía los avisos pendientes (lo llama un cron cada 5 min)
 //   POST /api/push { action: 'key' }    -> { publicKey }  (clave VAPID pública)
 //   POST /api/push { action: 'subscribe', device, sub }    -> { ok }
@@ -111,9 +113,11 @@ async function runDue(subject) {
     if (!raw) { await forget(device); continue; }
     try {
       const status = await sendPush(JSON.parse(raw), subject);
+      await redis('SET', 'rit:lastsend', JSON.stringify({ at: now, status }));
       if (status === 404 || status === 410) { await forget(device); gone++; } else if (status < 300) sent++;
     } catch (_) { /* el servicio push no responde: se reintentará en el próximo aviso */ }
   }
+  await redis('SET', 'rit:lastrun', String(now));
   return { devices: devices.length, sent, gone };
 }
 
@@ -129,7 +133,11 @@ module.exports = async (req, res) => {
     const q = req.query || Object.fromEntries(new URL(req.url, 'http://x').searchParams);
     if ('run' in q) return res.status(200).json({ ok: true, ...(await runDue(subject)) });
     try {
-      return res.status(200).json({ configured: true, devices: Number(await redis('SCARD', 'rit:devs')) || 0 });
+      const devices = (await redis('SMEMBERS', 'rit:devs')) || [];
+      const counts = await Promise.all(devices.map((d) => redis('ZCARD', `rit:p:${d}`)));
+      const lastRun = Number(await redis('GET', 'rit:lastrun')) || null;
+      const lastSend = JSON.parse((await redis('GET', 'rit:lastsend')) || 'null');
+      return res.status(200).json({ configured: true, devices: devices.length, pending: counts.filter(Boolean).length, lastRun, lastSend });
     } catch (err) {
       return res.status(200).json({ configured: false, error: `redis: ${err.message}`, vars });
     }

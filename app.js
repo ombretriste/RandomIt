@@ -1,7 +1,7 @@
 'use strict';
 
 // Versión de la app (se ve en la pantalla de inicio). Arreglos y ajustes: 1.0.x; novedades: 1.x.0.
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.5.3';
 // Uso de la app en Vercel Analytics: es una sola página, así que cada función se cuenta como una
 // página virtual. Solo se envía el nombre de la función, nunca datos de la app.
 const track = (path) => { try { window.va?.('pageview', { path }); } catch (_) { /* sin analítica */ } };
@@ -620,10 +620,9 @@ async function initNotifications() {
   });
   try { meta = (await kvGet('meta')) || {}; } catch (_) { meta = {}; }
   await kvSet('notif', notif).catch(() => {});
-  if (notif.on && canPush() && Notification.permission === 'granted') {
-    if (meta.subscribed) refreshSchedule();
-    else subscribePush();
-  }
+  // Siempre se vuelve a registrar: si la suscripción caducó, el servidor borró el dispositivo y
+  // subir solo las horas fallaría sin avisar
+  if (notif.on && canPush() && Notification.permission === 'granted') subscribePush();
 }
 
 // ---------- Pantalla de inicio ----------
